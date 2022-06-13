@@ -1,0 +1,33 @@
+{
+  "name": "@kaffee/latte",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "browser": "dist/umd/index.umd.js",
+  "types": "dist/typings/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "test": "ts-node --esm --experimentalSpecifierResolution=node ./bin/bin.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "^13.3.0",
+    "@types/fs-extra": "^9.0.13",
+    "@types/node": "^16",
+    "@types/svgo": "^2.6.3",
+    "rollup": "^2.75.6",
+    "rollup-plugin-dts": "^4.2.2",
+    "rollup-plugin-typescript2": "^0.32.1",
+    "ts-node": "^10.8.1",
+    "tslib": "^2.4.0",
+    "typescript": "^4.7.3"
+  },
+  "dependencies": {
+    "@nodelib/fs.walk": "^1.2.8",
+    "fs-extra": "^10.1.0",
+    "svgo": "^2.8.0"
+  }
+}
