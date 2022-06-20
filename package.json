@@ -1,6 +1,6 @@
 {
   "name": "@kaffee/latte",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
@@ -8,7 +8,8 @@
   "types": "dist/typings/index.d.ts",
   "scripts": {
     "test": "ts-node --esm --experimentalSpecifierResolution=node ./bin/bin.ts",
-    "prepublish": "rollup -c"
+    "prepublish": "rollup -c",
+    "ipublish":"pnpm publish --no-git-checks --registry https://registry.npmjs.org/ --access public"
   },
   "keywords": [],
   "author": "",
