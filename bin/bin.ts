@@ -1,5 +1,5 @@
 import { readFileSync } from "fs";
-import { optimize } from "svgo";
+import { optimize, OptimizedSvg } from "svgo";
 import { walkSync } from "@nodelib/fs.walk";
 import { basename, resolve, sep } from "path";
 import fse from "fs-extra";
@@ -17,23 +17,36 @@ const pathWalk = walkSync(config.svg).filter((item) =>
 );
 const list: SVGItem[] = pathWalk
   .map((item) => {
-    const literal = getSvgData(
-      readFileSync(resolve(process.cwd(), item.path)).toString()
-    );
+    const origin = readFileSync(resolve(process.cwd(), item.path)).toString();
+    const literal = getSvgData(origin);
     let namespace = "default";
     if (config["namespace"]) {
       const paths = item.path.split(sep);
       namespace = paths[paths.length - 2];
     }
-    const iconName = basename(item.path).replace(".svg", "");
-    return { namespace, literal, iconName };
-  })
-  .filter((item) => item.literal) as SVGItem[];
 
-console.log(list);
+    const iconName = basename(item.path).replace(".svg", "");
+    return {
+      namespace,
+      literal: literal ? literal.svg : "",
+      iconName,
+      viewBox: literal ? literal.viewBox : "0 0 200 200",
+      width: literal ? literal.width : 16,
+      height: literal ? literal.height : 16,
+    };
+  })
+  .filter((item) => item.literal);
+
 list.some((item) => {
   saveDist(item);
 });
+const indexFile =
+  list
+    .map((item) => `export * from "./${item.namespace}/${item.iconName}";`)
+    .join("\n") + "\n";
+
+fse.outputFileSync(resolve(config["dist"], "index.ts"), indexFile);
+
 function getSvgData(svgStr: string) {
   const result = optimize(svgStr, {
     multipass: true,
@@ -50,16 +63,25 @@ function getSvgData(svgStr: string) {
       "removeStyleElement",
       "removeComments",
       "removeDesc",
+      "removeMetadata",
       "removeUselessDefs",
+      "removeXMLProcInst",
+      "removeXMLNS",
       "cleanupIDs",
       "convertShapeToPath",
+      "removeDoctype",
+      { name: "convertPathData", params: { forceAbsolutePath: false } },
     ],
   });
   if (result.error === undefined) {
+    const viewBox = getViewBox(result);
+
     const svg = result.data
       .replace(/<svg[^>]+>/gi, "")
       .replace(/<\/svg>/gi, "");
-    return svg;
+    const width = parseFloat(result.info.width) || 16;
+    const height = parseFloat(result.info.height) || 16;
+    return { svg, viewBox, width, height };
   }
   return null;
 }
@@ -76,12 +98,34 @@ function saveDist(svgItem: SVGItem) {
       svgItem.iconName + ".ts"
     );
   }
-  const file = `import {SVGItem} from "@kaffee/latte"
 
-export const ${svgItem.iconName} = {
+  let file = `/* eslint-disable ${config["eslint"] ? config["eslint"] : ""}*/
+import {SVGItem} from "@kaffee/latte";
+
+export const ${svgItem.iconName}:SVGItem = {
     namespace: "${svgItem.namespace}",
     literal: \`${svgItem.literal}\`,
-    iconName: "${svgItem.iconName}"
-}`;
+    iconName: "${svgItem.iconName}",
+    viewBox: "${svgItem.viewBox}",
+    height: ${svgItem.height},
+    width: ${svgItem.width}
+};
+/* eslint-enable  ${config["eslint"] ? config["eslint"] : ""}*/
+`;
   fse.outputFileSync(filename, file);
+}
+
+function getViewBox(svgoResult: OptimizedSvg) {
+  let viewBoxMatch = svgoResult.data.match(
+    /viewBox="([-\d\.]+\s[-\d\.]+\s[-\d\.]+\s[-\d\.]+)"/
+  );
+  let viewBox: string = "0 0 200 200";
+
+  if (viewBoxMatch && viewBoxMatch.length > 1) {
+    viewBox = viewBoxMatch[1];
+  } else if (svgoResult.info.height && svgoResult.info.width) {
+    viewBox = `0 0 ${svgoResult.info.width} ${svgoResult.info.height}`;
+  }
+
+  return viewBox;
 }

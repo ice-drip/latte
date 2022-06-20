@@ -20,7 +20,7 @@ const rollupConfig = [
       },
       {
         format: "umd",
-        name: "ristretto",
+        name: "latte",
         sourcemap: true,
         file: "dist/umd/index.umd.js",
       },
@@ -30,7 +30,13 @@ const rollupConfig = [
     input: "src/index.ts",
     plugins: [dts()],
     output: [{ file: "dist/typings/index.d.ts", format: "es" }],
-  },
+  },{
+    input:"bin/bin.ts",
+    plugins:[typescript2()],
+    output:[{
+      file:"bin.js",format:"cjs"
+    }]
+  }
 ];
 
 export default rollupConfig;

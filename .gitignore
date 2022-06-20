@@ -1,3 +1,6 @@
 node_modules
 dist
 svg
+folder-alias.json
+bin.js
+latte.config.json
