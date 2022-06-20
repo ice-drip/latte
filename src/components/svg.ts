@@ -11,6 +11,17 @@ const Svg = (svgList: SVGItem[]) =>
   class SvgComponent extends HTMLElement {
     public readonly svgList: SVGItem[] = svgList;
     connectedCallback() {
+      this.initHTML();
+    }
+
+    attributeChangedCallback(name: string, _oldValue: string, _newValue: string) {
+      const attrs = new Set(["namespace", "name", "width", "height"]);
+      if (attrs.has(name)) {
+        this.initHTML();
+      }
+    }
+
+    initHTML(){
       const namespace = this.getAttribute("namespace") ?? "default";
       const iconName = this.getAttribute("name");
       const width = this.getAttribute("width");
@@ -26,5 +37,6 @@ const Svg = (svgList: SVGItem[]) =>
         throw new Error("SVG name is required");
       }
     }
+
   };
 export { Svg,SVGItem };
