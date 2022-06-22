@@ -102,7 +102,7 @@ function saveDist(svgItem: SVGItem) {
   let file = `/* eslint-disable ${config["eslint"] ? config["eslint"] : ""}*/
 import {SVGItem} from "@kaffee/latte";
 
-export const ${svgItem.iconName}:SVGItem = {
+export const ${svgItem.namespace==="default"?"":svgItem.namespace+"_"}${svgItem.iconName}:SVGItem = {
     namespace: "${svgItem.namespace}",
     literal: \`${svgItem.literal}\`,
     iconName: "${svgItem.iconName}",
