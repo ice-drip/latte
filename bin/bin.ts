@@ -42,10 +42,28 @@ list.some((item) => {
 });
 const indexFile =
   list
-    .map((item) => `export * from "./${item.namespace}/${item.iconName}";`)
+    .map(
+      (item) =>
+        `import { ${item.namespace}_${item.iconName} } from "./${item.namespace}/${item.iconName}";`
+    )
     .join("\n") + "\n";
 
-fse.outputFileSync(resolve(config["dist"], "index.ts"), indexFile);
+let allIcon = list
+  .map((item) => `${item.namespace}_${item.iconName},`)
+  .join("\n");
+allIcon = allIcon.substring(0, allIcon.lastIndexOf(","));
+const allIconVar =
+  `const all_icon = [
+${allIcon}
+];
+export { all_icon };
+` + "\n";
+const exportData = "export {\n" + allIcon + "\n};\n";
+
+fse.outputFileSync(
+  resolve(config["dist"], "index.ts"),
+  indexFile + allIconVar + exportData
+);
 
 function getSvgData(svgStr: string) {
   const result = optimize(svgStr, {
@@ -102,7 +120,9 @@ function saveDist(svgItem: SVGItem) {
   let file = `/* eslint-disable ${config["eslint"] ? config["eslint"] : ""}*/
 import {SVGItem} from "@kaffee/latte";
 
-export const ${svgItem.namespace==="default"?"":svgItem.namespace+"_"}${svgItem.iconName}:SVGItem = {
+export const ${svgItem.namespace === "default" ? "" : svgItem.namespace + "_"}${
+    svgItem.iconName
+  }:SVGItem = {
     namespace: "${svgItem.namespace}",
     literal: \`${svgItem.literal}\`,
     iconName: "${svgItem.iconName}",
