@@ -79,8 +79,8 @@ function getSvgData(svgStr: string) {
     const svg = result.data
       .replace(/<svg[^>]+>/gi, "")
       .replace(/<\/svg>/gi, "");
-    const width = parseFloat(result.info.width) || 16;
-    const height = parseFloat(result.info.height) || 16;
+    const width = parseInt(result.info.width) || 16;
+    const height = parseInt(result.info.height) || 16;
     return { svg, viewBox, width, height };
   }
   return null;
