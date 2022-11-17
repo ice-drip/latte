@@ -28,7 +28,7 @@ const rollupConfig = [
   },
   {
     input: "src/index.ts",
-    plugins: [dts()],
+    plugins: [dts.default()],
     output: [{ file: "dist/typings/index.d.ts", format: "es" }],
   },{
     input:"bin/bin.ts",

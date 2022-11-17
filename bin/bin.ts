@@ -1,5 +1,5 @@
 import { readFileSync } from "fs";
-import { optimize, OptimizedSvg } from "svgo";
+import { optimize, Output } from "svgo";
 import { walkSync } from "@nodelib/fs.walk";
 import { basename, resolve, sep } from "path";
 import fse from "fs-extra";
@@ -18,7 +18,7 @@ const pathWalk = walkSync(config.svg).filter((item) =>
 const list: SVGItem[] = pathWalk
   .map((item) => {
     const origin = readFileSync(resolve(process.cwd(), item.path)).toString();
-    const literal = getSvgData(origin);
+    const literal: any = getSvgData(origin);
     let namespace = "default";
     if (config["namespace"]) {
       const paths = item.path.split(sep);
@@ -66,6 +66,8 @@ fse.outputFileSync(
 );
 
 function getSvgData(svgStr: string) {
+  let _width = "0";
+  let _height = "0";
   const result = optimize(svgStr, {
     multipass: true,
     plugins: [
@@ -85,23 +87,32 @@ function getSvgData(svgStr: string) {
       "removeUselessDefs",
       "removeXMLProcInst",
       "removeXMLNS",
-      "cleanupIDs",
       "convertShapeToPath",
       "removeDoctype",
       { name: "convertPathData", params: { forceAbsolutePath: false } },
+      {
+        name: "find-size",
+        fn: () => {
+          return {
+            element: {
+              enter: (node, parentNode) => {
+                if (parentNode.type === "root") {
+                  _width = node.attributes.width;
+                  _height = node.attributes.height;
+                }
+              },
+            },
+          };
+        },
+      },
     ],
   });
-  if (result.error === undefined) {
-    const viewBox = getViewBox(result);
+  const viewBox = getViewBox(result, parseInt(_height), parseInt(_width));
 
-    const svg = result.data
-      .replace(/<svg[^>]+>/gi, "")
-      .replace(/<\/svg>/gi, "");
-    const width = parseInt(result.info.width) || 16;
-    const height = parseInt(result.info.height) || 16;
-    return { svg, viewBox, width, height };
-  }
-  return null;
+  const svg = result.data.replace(/<svg[^>]+>/gi, "").replace(/<\/svg>/gi, "");
+  const width = parseInt(_width) || 16;
+  const height = parseInt(_height) || 16;
+  return { svg, viewBox, width, height };
 }
 
 function saveDist(svgItem: SVGItem) {
@@ -135,7 +146,7 @@ export const ${svgItem.namespace === "default" ? "" : svgItem.namespace + "_"}${
   fse.outputFileSync(filename, file);
 }
 
-function getViewBox(svgoResult: OptimizedSvg) {
+function getViewBox(svgoResult: Output, height: number, width: number) {
   let viewBoxMatch = svgoResult.data.match(
     /viewBox="([-\d\.]+\s[-\d\.]+\s[-\d\.]+\s[-\d\.]+)"/
   );
@@ -143,8 +154,8 @@ function getViewBox(svgoResult: OptimizedSvg) {
 
   if (viewBoxMatch && viewBoxMatch.length > 1) {
     viewBox = viewBoxMatch[1];
-  } else if (svgoResult.info.height && svgoResult.info.width) {
-    viewBox = `0 0 ${svgoResult.info.width} ${svgoResult.info.height}`;
+  } else if (height && width) {
+    viewBox = `0 0 ${width} ${height}`;
   }
 
   return viewBox;
