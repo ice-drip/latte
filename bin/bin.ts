@@ -1,5 +1,5 @@
 import { readFileSync } from "fs";
-import { optimize, Output } from "svgo";
+import { optimize, Output, PluginConfig } from "svgo";
 import { walkSync } from "@nodelib/fs.walk";
 import { basename, resolve, sep } from "path";
 import fse from "fs-extra";
@@ -15,17 +15,34 @@ if (!config["svg"] || !config["dist"]) {
 const pathWalk = walkSync(config.svg).filter((item) =>
   item.path.endsWith(".svg")
 );
+
+const isColor = (path: string) => {
+  if (config.color && config.color.length) {
+    const _path = path.split(sep).join("/");
+    return (config.color as string[]).some((item) => {
+      return _path.startsWith(item);
+    });
+  }
+  return false;
+};
+
 const list: SVGItem[] = pathWalk
   .map((item) => {
     const origin = readFileSync(resolve(process.cwd(), item.path)).toString();
-    const literal: any = getSvgData(origin);
+    const literal = getSvgData(origin, isColor(item.path));
     let namespace = "default";
     if (config["namespace"]) {
       const paths = item.path.split(sep);
       namespace = paths[paths.length - 2];
     }
 
-    const iconName = basename(item.path).replace(".svg", "");
+    const iconName = basename(item.path)
+      .replace(".svg", "")
+      .replaceAll(
+        /[`~!@#$%^&*()_\-+=<>?:"{}|,.\/;'\\[\]·~！@#￥%……&*（）——\-+={}|《》？：“”【】、；‘'，。、]/img,
+        "_"
+      )
+      .replaceAll(" ", "_");
     return {
       namespace,
       literal: literal ? literal.svg : "",
@@ -65,47 +82,50 @@ fse.outputFileSync(
   indexFile + allIconVar + exportData
 );
 
-function getSvgData(svgStr: string) {
+function getSvgData(svgStr: string, color?: boolean) {
   let _width = "0";
   let _height = "0";
+  const plugins: PluginConfig[] = [
+    "removeTitle",
+    "inlineStyles",
+    "convertStyleToAttrs",
+    "removeStyleElement",
+    "removeComments",
+    "removeDesc",
+    "removeMetadata",
+    "removeUselessDefs",
+    "removeXMLProcInst",
+    "removeXMLNS",
+    "convertShapeToPath",
+    "removeDoctype",
+    { name: "convertPathData", params: { forceAbsolutePath: false } },
+    {
+      name: "find-size",
+      fn: () => {
+        return {
+          element: {
+            enter: (node, parentNode) => {
+              if (parentNode.type === "root") {
+                _width = node.attributes.width;
+                _height = node.attributes.height;
+              }
+            },
+          },
+        };
+      },
+    },
+  ];
+  if (color) {
+    plugins.push({
+      name: "removeAttrs",
+      params: {
+        attrs: "(fill|stroke)",
+      },
+    });
+  }
   const result = optimize(svgStr, {
     multipass: true,
-    plugins: [
-      {
-        name: "removeAttrs",
-        params: {
-          attrs: "(fill|stroke)",
-        },
-      },
-      "removeTitle",
-      "inlineStyles",
-      "convertStyleToAttrs",
-      "removeStyleElement",
-      "removeComments",
-      "removeDesc",
-      "removeMetadata",
-      "removeUselessDefs",
-      "removeXMLProcInst",
-      "removeXMLNS",
-      "convertShapeToPath",
-      "removeDoctype",
-      { name: "convertPathData", params: { forceAbsolutePath: false } },
-      {
-        name: "find-size",
-        fn: () => {
-          return {
-            element: {
-              enter: (node, parentNode) => {
-                if (parentNode.type === "root") {
-                  _width = node.attributes.width;
-                  _height = node.attributes.height;
-                }
-              },
-            },
-          };
-        },
-      },
-    ],
+    plugins,
   });
   const viewBox = getViewBox(result, parseInt(_height), parseInt(_width));
 
