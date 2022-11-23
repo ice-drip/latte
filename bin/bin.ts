@@ -115,7 +115,7 @@ function getSvgData(svgStr: string, color?: boolean) {
       },
     },
   ];
-  if (color) {
+  if (color!==true) {
     plugins.push({
       name: "removeAttrs",
       params: {

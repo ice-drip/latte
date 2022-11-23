@@ -1,2 +1,7 @@
 ./src
 pnpm-lock.yaml
+./svg
+./icons
+folder-alias.json
+latte.config.json
+rollup.config.js
