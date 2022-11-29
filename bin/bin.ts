@@ -4,6 +4,8 @@ import { walkSync } from "@nodelib/fs.walk";
 import { basename, resolve, sep } from "path";
 import fse from "fs-extra";
 import { SVGItem } from "../src";
+import { groupBy } from "lodash";
+import {format} from "prettier";
 
 const config = JSON.parse(
   readFileSync(resolve(process.cwd(), "latte.config.json")).toString()
@@ -39,7 +41,7 @@ const list: SVGItem[] = pathWalk
     const iconName = basename(item.path)
       .replace(".svg", "")
       .replaceAll(
-        /[`~!@#$%^&*()_\-+=<>?:"{}|,.\/;'\\[\]·~！@#￥%……&*（）——\-+={}|《》？：“”【】、；‘'，。、]/img,
+        /[`~!@#$%^&*()_\-+=<>?:"{}|,.\/;'\\[\]·~！@#￥%……&*（）——\-+={}|《》？：“”【】、；‘'，。、]/gim,
         "_"
       )
       .replaceAll(" ", "_");
@@ -75,11 +77,25 @@ ${allIcon}
 ];
 export { all_icon };
 ` + "\n";
-const exportData = "export {\n" + allIcon + "\n};\n";
 
+const workspaceIcon = groupBy(list, "namespace");
+const workspaceVar = Object.keys(workspaceIcon)
+  .map((key) => {
+    let wsIcon = workspaceIcon[key]
+      .map((item) => `${item.namespace}_${item.iconName},`)
+      .join("\n");
+    wsIcon = wsIcon.substring(0, wsIcon.lastIndexOf(","));
+    return `export const ws_${key}_icon = [
+    ${wsIcon}
+  ];`+"\n";
+  })
+  .join("\n");
+
+const exportData = "export {\n" + allIcon + "\n};\n";
+const outputText = format(indexFile + allIconVar + workspaceVar + exportData)
 fse.outputFileSync(
   resolve(config["dist"], "index.ts"),
-  indexFile + allIconVar + exportData
+  outputText
 );
 
 function getSvgData(svgStr: string, color?: boolean) {
