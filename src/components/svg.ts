@@ -1,3 +1,11 @@
+/*
+ * @Author: Rikka
+ * @Date: 2022-11-17 19:57:20
+ * @LastEditTime: 2022-11-29 20:25:44
+ * @LastEditors: Rikka
+ * @Description: 
+ * @FilePath: \latte\src\components\svg.ts
+ */
 interface SVGItem {
   namespace: string;
   literal: string;
@@ -24,10 +32,13 @@ const Svg = (svgList: SVGItem[]) =>
       _oldValue: string,
       _newValue: string
     ) {
-      const attrs = new Set(["namespace", "name", "width", "height"]);
-      if (attrs.has(name)) {
-        this.initHTML();
+      if(_oldValue){
+        const attrs = new Set(["namespace", "name", "width", "height"]);
+        if (attrs.has(name)) {
+          this.initHTML();
+        }
       }
+  
     }
 
     initHTML() {
