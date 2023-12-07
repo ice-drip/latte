@@ -47,7 +47,7 @@ const Svg = (svgList: SVGItem[]) =>
       const width = this.getAttribute("width");
       const height = this.getAttribute("height");
 
-      if (iconName && namespace && width && height) {
+      if (iconName && namespace) {
         const svg = this.svgList.find(
           (icon) => icon.iconName === iconName && icon.namespace === namespace
         );
@@ -55,7 +55,7 @@ const Svg = (svgList: SVGItem[]) =>
           const style =
             width && height
               ? `width:${width};height:${height};`
-              : `width:${svg.width}px;height:${svg.height}px;`;
+              : `width:${svg.width||8}px;height:${svg.height||8}px;`;
           this.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" style="${style}" viewBox="${svg.viewBox}">${svg.literal}</svg>`;
         }
       }
