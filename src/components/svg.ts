@@ -20,7 +20,7 @@ const Svg = (svgList: SVGItem[]) =>
     public readonly svgList: SVGItem[] = svgList;
 
     static get observedAttributes() {
-      return ["name", "namespace", "width", "height"];
+      return ["name", "namespace", "width", "height","rwidth","rheight"];
     }
 
     connectedCallback() {
@@ -33,7 +33,7 @@ const Svg = (svgList: SVGItem[]) =>
       _newValue: string
     ) {
       if(_oldValue){
-        const attrs = new Set(["namespace", "name", "width", "height"]);
+        const attrs = new Set(["namespace", "name", "width", "height","rwidth","rheight"]);
         if (attrs.has(name)) {
           this.initHTML();
         }
@@ -44,8 +44,8 @@ const Svg = (svgList: SVGItem[]) =>
     initHTML() {
       const namespace = this.getAttribute("namespace") ?? "default";
       const iconName = this.getAttribute("name");
-      const width = this.getAttribute("width");
-      const height = this.getAttribute("height");
+      const width = this.getAttribute("rwidth");
+      const height = this.getAttribute("rheight");
 
       if (iconName && namespace) {
         const svg = this.svgList.find(
